@@ -18,7 +18,7 @@ tailscale up \
   --advertise-exit-node \
   --ssh
 
-# Чтобы Render не усыпил контейнер
-python3 -m http.server 8080 &
+# Вместо python3 -m http.server 8080
+while true; do echo -e "HTTP/1.1 200 OK\n\nOK" | nc -l -p 8080; done &
 
 exec sleep infinity
