@@ -18,7 +18,4 @@ tailscale up \
   --advertise-exit-node \
   --ssh
 
-# Вместо python3 -m http.server 8080
-while true; do echo -e "HTTP/1.1 200 OK\n\nOK" | nc -l -p 8080; done &
-
-exec sleep infinity
+python3 -m http.server 8080 &
