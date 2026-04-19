@@ -18,6 +18,6 @@ tailscale up \
 
 sleep 3
 
-python3 -m http.server 10000 --bind 0.0.0.0 &
+python3 -m http.server 10000 --bind 0.0.0.0 --directory /app &
 
 exec sleep infinity
