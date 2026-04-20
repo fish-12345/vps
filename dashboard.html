@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSCTL — Network Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --border: #e8e6e0;
+    --border2: #d4d1c8;
+    --text: #1a1a18;
+    --muted: #8a8880;
+    --accent: #2d6a4f;
+    --accent2: #40916c;
+    --accent-light: #d8f3dc;
+    --danger: #c1121f;
+    --mono: 'DM Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+  html, body { height: 100%; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+  /* LOGIN */
+  .login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; }
+  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 3rem 2.5rem; width: 100%; max-width: 380px; animation: rise 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  .login-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--accent-light); display: flex; align-items: center; justify-content: center; margin-bottom: 1.25rem; }
+  .login-icon svg { width: 24px; height: 24px; fill: var(--accent); }
+  .login-title { font-family: var(--mono); font-size: 1.25rem; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .login-sub { font-size: 13px; color: var(--muted); font-weight: 300; margin-bottom: 2rem; }
+  .field { margin-bottom: 1rem; }
+  .field label { display: block; font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+  .field input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem 1rem; color: var(--text); font-family: var(--mono); font-size: 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+  .field input:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(64,145,108,0.12); }
+  .field input::placeholder { color: var(--border2); }
+  .login-btn { width: 100%; background: var(--text); border: none; border-radius: 10px; padding: 0.8rem; color: #fff; font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.05em; cursor: pointer; transition: background 0.2s, transform 0.15s; margin-top: 0.5rem; position: relative; overflow: hidden; }
+  .login-btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%); transform: translateX(-100%); transition: transform 0.5s; }
+  .login-btn:hover { background: #2d2d2b; }
+  .login-btn:hover::after { transform: translateX(100%); }
+  .login-btn:active { transform: scale(0.98); }
+  .err { font-size: 12px; color: var(--danger); margin-top: 0.75rem; text-align: center; min-height: 16px; font-family: var(--mono); }
+
+  /* DASHBOARD */
+  .dash { display: none; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 1rem 2rem; background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; animation: slideDown 0.4s ease both; }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .status-pip { width: 7px; height: 7px; border-radius: 50%; background: var(--accent2); animation: pip 2.5s ease infinite; }
+  @keyframes pip { 0%,100% { opacity:1; box-shadow: 0 0 0 0 rgba(64,145,108,0.4); } 50% { opacity:0.8; box-shadow: 0 0 0 5px rgba(64,145,108,0); } }
+  .topbar-name { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--text); }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+  .ts-label { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .btn-sm { background: none; border: 1px solid var(--border); border-radius: 7px; padding: 5px 12px; font-family: var(--mono); font-size: 11px; color: var(--muted); cursor: pointer; transition: all 0.2s; }
+  .btn-sm:hover { border-color: var(--border2); color: var(--text); }
+  .btn-sm.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+  .main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 2rem; }
+  .scard { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1.1rem 1.25rem; animation: cardIn 0.5s cubic-bezier(0.22,1,0.36,1) both; transition: border-color 0.2s, transform 0.2s; }
+  .scard:hover { border-color: var(--border2); transform: translateY(-1px); }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .scard:nth-child(1){animation-delay:0.05s} .scard:nth-child(2){animation-delay:0.1s} .scard:nth-child(3){animation-delay:0.15s} .scard:nth-child(4){animation-delay:0.2s} .scard:nth-child(5){animation-delay:0.25s}
+  .scard-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px; }
+  .scard-val { font-family: var(--mono); font-size: 1.4rem; font-weight: 500; color: var(--text); line-height: 1; }
+  .scard-sub { font-size: 11px; color: var(--muted); margin-top: 3px; font-weight: 300; }
+
+  .section-hdr { margin-bottom: 12px; }
+  .section-title { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+
+  .devlist { display: flex; flex-direction: column; gap: 8px; }
+  .dcard { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s; animation: cardIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+  .dcard:hover { border-color: var(--border2); box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+  .dcard.open { border-color: var(--border2); }
+  .dcard-top { display: flex; align-items: center; gap: 12px; padding: 1rem 1.25rem; }
+  .ddot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .ddot.on { background: var(--accent2); box-shadow: 0 0 0 3px var(--accent-light); }
+  .ddot.off { background: var(--border2); }
+  .dinfo { flex: 1; min-width: 0; }
+  .dname { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .dip { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .dtraffic { display: flex; gap: 16px; flex-shrink: 0; }
+  .dtr { text-align: right; }
+  .dtr-lbl { font-size: 10px; color: var(--muted); font-weight: 500; letter-spacing: 0.05em; }
+  .dtr-val { font-family: var(--mono); font-size: 12px; color: var(--text); margin-top: 1px; }
+  .chevron { width: 14px; height: 14px; color: var(--border2); transition: transform 0.3s; flex-shrink: 0; }
+  .dcard.open .chevron { transform: rotate(180deg); }
+  .ddetail { max-height: 0; overflow: hidden; transition: max-height 0.35s cubic-bezier(0.22,1,0.36,1); }
+  .dcard.open .ddetail { max-height: 200px; }
+  .ddetail-inner { padding: 0.75rem 1.25rem 1rem; border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+  .di-key { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 3px; }
+  .di-val { font-family: var(--mono); font-size: 12px; color: var(--text); }
+  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 5px; font-size: 10px; font-weight: 500; }
+  .badge.exit { background: var(--accent-light); color: var(--accent); }
+  .badge.offline { background: #f0ede6; color: var(--muted); }
+  .footer { text-align: center; font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 2rem; padding-bottom: 2rem; }
+
+  .loading-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  .loading-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); animation: ldot 1.2s ease infinite; margin: 0 4px; }
+  .loading-dot:nth-child(2){animation-delay:0.2s} .loading-dot:nth-child(3){animation-delay:0.4s}
+  @keyframes ldot { 0%,80%,100%{opacity:0.2;transform:scale(0.8)} 40%{opacity:1;transform:scale(1)} }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-dot"></div>
+  <div class="loading-dot"></div>
+  <div class="loading-dot"></div>
+</div>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginScreen" style="display:none">
+  <div class="login-card">
+    <div class="login-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5L12 1z"/></svg>
+    </div>
+    <div class="login-title">tsctl panel</div>
+    <div class="login-sub">Tailscale network dashboard</div>
+    <div class="field">
+      <label>Access code</label>
+      <input type="password" id="pwInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign in</button>
+    <div class="err" id="errMsg"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dash" id="dashboard">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="status-pip"></div>
+      <div class="topbar-name">tsctl panel</div>
+    </div>
+    <div class="topbar-right">
+      <span class="ts-label" id="lastUpdate"></span>
+      <button class="btn-sm" onclick="loadDevices()">↻ Refresh</button>
+      <button class="btn-sm danger" onclick="logout()">Sign out</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="stats">
+      <div class="scard"><div class="scard-label">Online</div><div class="scard-val" id="sOnline">—</div><div class="scard-sub">devices</div></div>
+      <div class="scard"><div class="scard-label">Total</div><div class="scard-val" id="sTotal">—</div><div class="scard-sub">registered</div></div>
+      <div class="scard"><div class="scard-label">Exit node</div><div class="scard-val" id="sExit" style="font-size:0.95rem;margin-top:4px">—</div></div>
+      <div class="scard"><div class="scard-label">Total ↓ RX</div><div class="scard-val" id="sTotalRx" style="font-size:1rem;margin-top:4px">—</div></div>
+      <div class="scard"><div class="scard-label">Total ↑ TX</div><div class="scard-val" id="sTotalTx" style="font-size:1rem;margin-top:4px">—</div></div>
+    </div>
+    <div class="section-hdr"><div class="section-title">Devices</div></div>
+    <div class="devlist" id="devList"></div>
+    <div class="footer" id="footerNote"></div>
+  </div>
+</div>
+
+<script>
+let PASS = '';
+let API_KEY = '';
+
+async function init() {
+  try {
+    const r = await fetch('/config');
+    const cfg = await r.json();
+    PASS = cfg.password;
+    API_KEY = cfg.apiKey;
+  } catch(e) {
+    console.error('Could not load config:', e);
+  }
+  document.getElementById('loadingScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+function doLogin() {
+  const v = document.getElementById('pwInput').value;
+  if (v === PASS) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadDevices();
+  } else {
+    document.getElementById('errMsg').textContent = 'Incorrect password. Try again.';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+
+function logout() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('pwInput').value = '';
+  document.getElementById('errMsg').textContent = '';
+}
+
+function fmtBytes(b) {
+  if (!b || b === 0) return '0 B';
+  const u = ['B','KB','MB','GB','TB'];
+  let i = 0;
+  while (b >= 1024 && i < 4) { b /= 1024; i++; }
+  return b.toFixed(1) + ' ' + u[i];
+}
+
+function timeSince(ts) {
+  if (!ts) return 'unknown';
+  const d = Math.floor((Date.now() - new Date(ts)) / 1000);
+  if (d < 60) return d + 's ago';
+  if (d < 3600) return Math.floor(d/60) + 'm ago';
+  if (d < 86400) return Math.floor(d/3600) + 'h ago';
+  return Math.floor(d/86400) + 'd ago';
+}
+
+function isOnline(n) {
+  if (!n.lastSeen) return false;
+  return (Date.now() - new Date(n.lastSeen)) < 5 * 60 * 1000;
+}
+
+async function loadDevices() {
+  document.getElementById('lastUpdate').textContent = 'Loading...';
+  try {
+    const r = await fetch('https://api.tailscale.com/api/v2/tailnet/-/devices?fields=all', {
+      headers: { 'Authorization': 'Bearer ' + API_KEY }
+    });
+    const d = await r.json();
+    renderDevices(d.devices || []);
+    document.getElementById('lastUpdate').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    document.getElementById('footerNote').textContent = '';
+  } catch(e) {
+    document.getElementById('lastUpdate').textContent = 'Error';
+    document.getElementById('footerNote').textContent = 'Failed to load devices. Check your API key.';
+  }
+}
+
+function renderDevices(devices) {
+  const online = devices.filter(d => isOnline(d)).length;
+  const exit = devices.find(d => (d.advertisedRoutes||[]).includes('0.0.0.0/0'));
+  const totalRx = devices.reduce((s,d) => s+(d.rx||0), 0);
+  const totalTx = devices.reduce((s,d) => s+(d.tx||0), 0);
+
+  document.getElementById('sOnline').textContent = online;
+  document.getElementById('sTotal').textContent = devices.length;
+  document.getElementById('sExit').textContent = exit ? exit.name : 'none';
+  document.getElementById('sTotalRx').textContent = fmtBytes(totalRx);
+  document.getElementById('sTotalTx').textContent = fmtBytes(totalTx);
+
+  const list = document.getElementById('devList');
+  list.innerHTML = '';
+
+  devices.forEach((d, i) => {
+    const on = isOnline(d);
+    const ip = (d.tailscaleIPs||[])[0] || '—';
+    const isExit = (d.advertisedRoutes||[]).includes('0.0.0.0/0');
+    const el = document.createElement('div');
+    el.className = 'dcard';
+    el.style.animationDelay = (i * 0.06 + 0.1) + 's';
+    el.innerHTML = `
+      <div class="dcard-top">
+        <div class="ddot ${on?'on':'off'}"></div>
+        <div class="dinfo">
+          <div class="dname">${d.name||d.hostname}${isExit?' <span class="badge exit">exit node</span>':''}${!on?' <span class="badge offline">offline</span>':''}</div>
+          <div class="dip">${ip} · ${d.os||'unknown'}</div>
+        </div>
+        <div class="dtraffic">
+          <div class="dtr"><div class="dtr-lbl">↓ RX</div><div class="dtr-val">${fmtBytes(d.rx)}</div></div>
+          <div class="dtr"><div class="dtr-lbl">↑ TX</div><div class="dtr-val">${fmtBytes(d.tx)}</div></div>
+        </div>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="ddetail">
+        <div class="ddetail-inner">
+          <div><div class="di-key">Last seen</div><div class="di-val">${timeSince(d.lastSeen)}</div></div>
+          <div><div class="di-key">Authorized</div><div class="di-val">${d.authorized?'Yes':'No'}</div></div>
+          <div><div class="di-key">Key expiry</div><div class="di-val">${d.keyExpiryDisabled?'Disabled':'Enabled'}</div></div>
+          <div><div class="di-key">Exit node</div><div class="di-val">${isExit?'Yes':'No'}</div></div>
+          <div><div class="di-key">Created</div><div class="di-val">${d.created?new Date(d.created).toLocaleDateString():'—'}</div></div>
+          <div><div class="di-key">OS</div><div class="di-val">${d.os||'—'}</div></div>
+        </div>
+      </div>`;
+    el.onclick = () => el.classList.toggle('open');
+    list.appendChild(el);
+  });
+}
+
+init();
+</script>
+</body>
+</html>
