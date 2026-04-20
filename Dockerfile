@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y curl python3 ca-certificates && \
 RUN mkdir -p /app
 
 COPY start.sh /start.sh
+COPY server.py /app/server.py
 COPY dashboard.html /app/index.html
 RUN chmod +x /start.sh
 CMD ["/start.sh"]
